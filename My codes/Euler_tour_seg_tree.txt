@@ -1,0 +1,100 @@
+#include <bits/stdc++.h>
+using namespace std;
+ 
+#define int long long 
+#define pb push_back
+#define S second
+#define F first
+#define f(i,n) for(int i=0;i<n;i++)
+#define fast ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0)
+#define vi vector<int>
+#define pii pair<int,int>
+ 
+const int N = 2e5+10;
+int st[2*N],tin[N],tout[N],tim=0,val[N];
+int n,q,a,b,l,r,typ;
+ 
+vi graph[N];
+ 
+void dfs(int node,int p=-1)
+{
+ st[tim+n] = val[node];
+ tin[node] = tim;
+ tout[node] = tim++;   
+    
+  for(auto x : graph[node])
+  if(x!=p) 
+  {
+      dfs(x,node);
+      tout[node]=max(tout[node],tout[x]);
+  }
+    
+    
+}
+ 
+int query(int l,int r)
+{
+ int res=0;
+    
+ r++;
+     
+ for(l+=n,r+=n;l<r;l>>=1,r>>=1)
+ {
+  if(l&1) res+=st[l++];   
+  if(r&1) res+=st[--r];   
+ }
+    
+  return res;  
+}
+ 
+void upd(int id,int val)
+{
+ for(st[id+=n] = val;id>0;id>>=1)  st[id>>1] = st[id] + st[id^1];
+}
+ 
+void solve()
+{
+cin >> n >> q;
+    
+f(i,n) cin >> val[i+1];
+    
+f(i,n-1)
+{
+  cin >> a >> b;
+  graph[a].pb(b);
+  graph[b].pb(a);
+}
+    dfs(1);
+    
+    for(int i=n-1;i>0;i--) st[i] = st[i<<1] + st[i<<1^1];
+ 
+while(q--)   
+{
+    cin >> typ;
+    
+    if(typ == 1) 
+    {
+      cin >> l >> r;
+      upd(tin[l],r);   
+    }
+    else 
+    {
+        cin >> l;
+        cout<<query(tin[l],tout[l]) << "\n";   
+    }
+}
+    
+}
+ 
+signed main()
+{
+    fast;
+    
+    int t = 1;
+    
+//    cin >> t;
+    
+    while(t--)
+        
+    solve();
+}
