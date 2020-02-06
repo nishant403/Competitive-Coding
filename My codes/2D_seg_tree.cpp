@@ -1,127 +1,105 @@
-//g++  5.4.0
-//2-D segment Tree
-#include<bits/stdc++.h>
+#include <bits/stdc++.h>
 using namespace std;
  
-#define ff first
-#define ss second
-#define int long long
 #define pb push_back
-#define pii pair< int,int >
-#define fast ios::sync_with_stdio(0) , cin.tie(0) , cout.tie(0) ;
-#define L(p) 2*p+1
-#define R(p) 2*p+2
+#define S second
+#define F first
+#define f(i,n) for(int i=0;i<n;i++)
+#define fast ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0)
+#define vi vector<int>
+#define pii pair<int,int>
  
-const int nax = 1e3+10;
-int jt[4*nax][4*nax];
+const int N = 1005;
+int n,q;
+int seg[4*N][4*N];
  
-int fun(int x,int y )
+void uy(int nodex,int nodey,int ly,int ry,int y,int flag)
 {
-    return x + y;
-}
-void build_y(int ly,int ry,int lx,int rx,int px,int py)
-{
-    if( ly == ry )
+    if(ly == ry)
     {
-        if( lx == rx )
-        {
-            char x;
-            cin >> x;
-            if( x == '*' ) jt[px][py] = 1;
-            else           jt[px][py] = 0;
-        }
-        else
-            jt[px][py] = fun(jt[L(px)][py] , jt[R(px)][py]);
-        return ;
-    }
-    int my = (ly+ry)>>1;
-    build_y( ly, my ,lx,rx, px, L(py) );
-    build_y( my+1 , ry ,lx,rx, px , R(py) );
-    jt[px][py] = fun( jt[px][L(py)] , jt[px][R(py)] );
-    return ;
-}
-void build_x(int lx,int rx,int ly,int ry,int px)
-{
-    if( lx == rx )
-    {
-        build_y(ly,ry,lx,rx,px,0);
-        return ;
-    }
-    int mx = (lx+rx)>>1;
-    build_x(lx , mx, ly, ry, L(px) );
-    build_x(mx+1 , rx, ly, ry, R(px) );
-    build_y(ly,ry,lx,rx,px,0);
-    return ;
-}
-void update_y(int ly , int ry, int y,int lx,int rx, int px, int py )
-{
-    if( ly == ry )
-    {
-        if( lx == rx ) jt[px][py] = 1-jt[px][py];
-        else           jt[px][py] = fun(jt[L(px)][py] , jt[R(px)][py]);
-        return ;
-    }
-    int my = (ly+ry)>>1;
-    if(my >= y )  update_y(ly,my,y,lx,rx,px,L(py));
-    else          update_y(my+1,ry,y,lx,rx,px,R(py));
-    jt[px][py] = fun( jt[px][L(py)] , jt[px][R(py)] );
-    return ;
-}
-void update_x(int lx,int rx ,int ly, int ry , int x,int y,int px)
-{
-    if( lx == rx )
-    {
-        update_y(ly, ry, y,lx,rx, px, 0);
+        if(flag) seg[nodex][nodey]^=1;
+        else seg[nodex][nodey] = seg[nodex*2+1][nodey] + seg[nodex*2+2][nodey];
+        
         return;
     }
-    int mx = (lx+rx)>>1;
-    if( mx >= x ) update_x(lx,mx,ly,ry,x,y,L(px));
-    else          update_x(mx+1,rx,ly,ry,x,y,R(px));
-    update_y(ly,ry,y,lx,rx,px,0);
-    return ;
+    
+    int mid = (ly + ry)/2;
+    
+    if(y <= mid) uy(nodex,nodey*2+1,ly,mid,y,flag);
+    else uy(nodex,nodey*2+2,mid+1,ry,y,flag);
+    
+    seg[nodex][nodey] = seg[nodex][nodey*2+1] +  seg[nodex][nodey*2+2];
 }
-int query_y(int ly,int ry,int y1,int y2,int px, int py )
-{
-    if( y1 > ry || y2 < ly ) return 0;
-    else if( ly >= y1 && ry <= y2 )
-        return jt[px][py];
-    int my = (ly+ry)>>1;
-    return query_y(ly,my,y1,y2,px,L(py)) + query_y(my+1,ry,y1,y2,px,R(py));
-}
-int query_x(int lx, int rx , int ly , int ry,int x1 , int y1 , int x2 , int y2 , int px )
-{
-    if( x1 > rx || x2 < lx ) return 0;
-    else if( lx >= x1 && rx <= x2 )
-    {
-        int p = query_y( ly,ry,y1,y2,px,0);
  
-        return p;
-    }
-    int mx = (lx+rx)>>1;
-    return query_x(lx,mx,ly,ry,x1,y1,x2,y2,L(px)) + query_x(mx+1,rx,ly,ry,x1,y1,x2,y2,R(px));
+void ux(int nodex,int lx,int rx,int x,int y)
+{
+   if(lx != rx)
+   {
+       int mid =(lx+rx)/2;
+       
+       if(x <= mid) ux(nodex*2+1,lx,mid,x,y);
+       else ux(nodex*2+2,mid+1,rx,x,y);
+   }
+    
+   uy(nodex,0,0,n-1,y,(lx==rx));  
 }
+ 
+int qy(int nodey,int nodex,int ly,int ry,int y1,int y2)
+{
+    if(ly > y2 || ry < y1) return 0;
+    
+    if(y1 <= ly && ry <= y2) return seg[nodex][nodey];
+    
+    int mid = (ly + ry)/2;
+    
+    return qy(nodey*2+1,nodex,ly,mid,y1,y2) + qy(nodey*2+2,nodex,mid+1,ry,y1,y2);
+}
+ 
+int qx(int nodex,int lx,int rx,int x1,int y1,int x2,int y2)
+{   
+    if(lx > x2 || rx < x1) return 0;
+ 
+    if(x1 <= lx && rx <= x2) return qy(0,nodex,0,n-1,y1,y2);
+    
+    int mid = (lx + rx)/2;
+    
+    return qx(nodex*2+1,lx,mid,x1,y1,x2,y2) + qx(nodex*2+2,mid+1,rx,x1,y1,x2,y2);   
+}
+ 
+void solve()
+{
+  cin >> n >> q;
+    
+  string s;
+    
+  f(i,n)
+  {
+      cin >> s;
+      f(j,n) if(s[j] == '*') ux(0,0,n-1,i,j);
+  }
+   
+  int t,x1,y1,x2,y2; 
+    
+  while(q--)
+  {
+      cin >> t;
+      
+      if(t==1)
+      {
+          cin >> x1 >> y1;
+          ux(0,0,n-1,x1-1,y1-1);
+      }
+      else
+      {
+          cin >> x1 >> y1 >> x2 >> y2;
+          cout << qx(0,0,n-1,x1-1,y1-1,x2-1,y2-1) << '\n';
+      }
+  }
+    
+}
+ 
 signed main()
 {
     fast;
-    int n , q;
-    cin >> n >> q;
-    build_x( 1,n,1,n,0 );
-    while( q-- )
-    {
-        int type;
-        cin>>type;
-        if( type == 1 )
-        {
-            int x,y;
-            cin >> x >> y;
-            update_x( 1,n,1,n,x,y,0);
-        }
-        else
-        {
- 
-            int x1,y1,x2,y2;
-            cin >> x1 >> y1 >> x2 >> y2;
-            cout << query_x(1,n,1,n,x1,y1,x2,y2,0) << "\n";
-        }
-    }
+    solve();
 }
