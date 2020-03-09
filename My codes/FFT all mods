@@ -1,0 +1,184 @@
+//https://codeforces.com/contest/1316/submission/72767375
+//This fft works for all prime mods upto 10^9
+
+#include<bits/stdc++.h>
+using namespace std;
+
+struct FFT_mod {
+	int mod, root, root_1, root_pw;
+};
+
+template <typename T>
+T extGcd(T a, T b, T& x, T& y) {
+	if (b == 0) {
+		x = 1;
+		y = 0;
+		return a;
+	}
+	else {
+		int g = extGcd(b, a % b, y, x);
+		y -= a / b * x;
+		return g;
+	}
+}
+
+template <typename T>
+T modInv(T a, T m) {
+	T x, y;
+	extGcd(a, m, x, y);
+	return (x % m + m) % m;
+}
+
+
+#include <array>
+
+FFT_mod suggested_fft_mods[] = {
+	{ 167772161, 243, 114609789, 1 << 25 },
+	{ 415236097, 73362476, 247718523, 1<<22 },
+	{ 463470593, 428228038, 182429, 1<<21},
+	{ 998244353, 15311432, 469870224, 1 << 23 },
+	{ 918552577, 86995699, 324602258, 1 << 22 }
+};
+
+int FFT_w[1050000];
+int FFT_w_dash[1050000];
+
+
+void ntt_shortmod(std::vector<int>& a, bool invert, const FFT_mod& mod_data) {
+	// only use if mod < 5*10^8
+	int n = (int)a.size();
+	int mod = mod_data.mod;
+
+	for (int i = 1, j = 0; i<n; ++i) {
+		int bit = n >> 1;
+		for (; j >= bit; bit >>= 1)
+			j -= bit;
+		j += bit;
+		if (i < j)
+			std::swap(a[i], a[j]);
+	}
+
+	for (int len = 2; len <= n; len <<= 1) {
+		int wlen = invert ? mod_data.root_1 : mod_data.root;
+		for (int i = len; i<mod_data.root_pw; i <<= 1)
+			wlen = int(wlen * 1ll * wlen % mod_data.mod);
+		long long tt = wlen;
+		for (int i = 1; i < len / 2; i++) {
+			FFT_w[i] = tt;
+			FFT_w_dash[i] = (tt << 31) / mod;
+			int q = (FFT_w_dash[1] * 1ll * tt) >> 31;
+			tt = (wlen * 1ll * tt - q * 1ll * mod) & ((1LL << 31) - 1);
+			if (tt >= mod) tt -= mod;
+		}
+		for (int i = 0; i<n; i += len) {
+			int uu = a[i], vv = a[i + len / 2] % mod;
+			if (uu >= 2*mod) uu -= 2*mod;
+			a[i] = uu + vv;
+			a[i + len / 2] = uu - vv + 2 * mod;
+
+			for (int j = 1; j<len / 2; ++j) {
+				int u = a[i + j];
+				if (u >= 2*mod) u -= 2*mod;
+				int q = (FFT_w_dash[j] * 1ll * a[i + j + len / 2]) >> 31;
+				int v = (FFT_w[j] * 1ll * a[i + j + len / 2] - q * 1ll * mod) & ((1LL << 31) - 1);
+				a[i + j] = u + v;
+				a[i + j + len / 2] = u - v + 2*mod;
+			}
+		}
+	}
+	if (invert) {
+		int nrev = modInv(n, mod);
+		for (int i = 0; i<n; ++i)
+			a[i] = int(a[i] * 1ll * nrev % mod);
+	}
+}
+
+
+long long _fft_crt(const std::vector< std::pair<int, int> >& a, int mod, std::array<int, 3> &x, std::array< std::array<int, 3>, 3> &modi) {
+	long long res = 0;
+	long long mult = 1;
+
+	int SZ = a.size();
+	for (int i = 0; i<SZ; ++i) {
+		x[i] = a[i].first;
+		for (int j = 0; j<i; ++j) {
+			long long cur = (x[i] - x[j]) * 1ll * modi[j][i];
+			x[i] = (int)(cur % a[i].second);
+			if (x[i] < 0) x[i] += a[i].second;
+		}
+		res = (res + mult * 1ll * x[i]);
+		mult = (mult * 1ll * a[i].second);
+		if (mod != -1) {
+			res %= mod;
+			mult %= mod;
+		}
+	}
+
+	return res;
+}
+
+void mul_mod_ip(std::vector<int> &a, std::vector<int> &b, int mod) {
+    for (int i = 0; i < a.size(); i++) a[i] = (a[i] * 1ll * b[i]) % mod;
+}
+
+std::vector<int> conv_generic(std::vector<int> &a, std::vector<int> &b, int mod) {
+    std::vector<int> at = a, bt = b, att = a, btt = b;
+    ntt_shortmod(at, false, suggested_fft_mods[0]);
+    ntt_shortmod(bt, false, suggested_fft_mods[0]);
+    mul_mod_ip(at,bt,suggested_fft_mods[0].mod);
+    ntt_shortmod(at, true, suggested_fft_mods[0]);
+
+    bt = b;
+    ntt_shortmod(att, false, suggested_fft_mods[1]);
+    ntt_shortmod(bt, false, suggested_fft_mods[1]);
+    mul_mod_ip(bt,att,suggested_fft_mods[1].mod);
+    ntt_shortmod(bt, true, suggested_fft_mods[1]);
+
+    att = a;
+    ntt_shortmod(att, false, suggested_fft_mods[2]);
+    ntt_shortmod(btt, false, suggested_fft_mods[2]);
+    mul_mod_ip(att,btt,suggested_fft_mods[2].mod);
+    ntt_shortmod(att, true, suggested_fft_mods[2]);
+
+	std::array<int, 3> x;
+	std::array< std::array<int,3>, 3> modi;
+
+	for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) if (i != j)  {
+		modi[i][j] = modInv(suggested_fft_mods[i].mod, suggested_fft_mods[j].mod);
+	}
+
+	std::vector<std::pair<int,int>> crt_input(3);
+	for (int i = 0; i < 3; i++) crt_input[i].second = suggested_fft_mods[i].mod;
+    for (int i = 0; i < a.size(); i++) {
+		crt_input[0].first = at[i];
+		crt_input[1].first = bt[i];
+		crt_input[2].first = att[i];
+		//printf("%d->%d %d %d\n",i,at[i],bt[i],att[i]);
+        btt[i] = _fft_crt(crt_input, mod, x, modi);
+    }
+    return btt;
+}
+
+
+int n,m,p;
+vector<int> a(2097152),b(2097152);
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(NULL);
+    cin>>n>>m>>p;
+
+    for(int i=0;i<n;i++){cin>>a[i];};
+   for(int i=0;i<m;i++) {cin>>b[i];};
+
+    vector<int> c = conv_generic(a,b,p);
+
+    for (int i = 0;i<c.size(); i++) {
+        if (c[i]) {
+            cout<<i<<"\n";
+            break;
+        }
+    }
+
+    return 0;
+}
