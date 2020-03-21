@@ -1,0 +1,148 @@
+#include <bits/stdc++.h>
+using namespace std;
+ 
+#define pb push_back
+#define S second
+#define F first
+#define f(i,n) for(int i=0;i<n;i++)
+#define fast ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0)
+#define vi vector<int>
+#define pii pair<int,int>
+#define ordered_set tree<int, null_type,less<int>, rb_tree_tag,tree_order_statistics_node_update> 
+#define precise(x) fixed << setprecision(x) 
+ 
+struct state {
+    int len, link;
+    map<char, int> next;
+    
+    bool is_clone;
+    int firstpos;
+    vector<int> inv_link;
+};
+ 
+const int MAXLEN = 5005;
+const int N = MAXLEN;
+state st[MAXLEN * 2];
+int sz, last;
+ 
+void sa_init() {
+    st[0].len = 0;
+    st[0].link = -1;
+    sz++;
+    last = 0;
+}
+ 
+void sa_extend(char c) {
+    int cur = sz++;
+    st[cur].len = st[last].len + 1;
+    st[cur].firstpos = st[cur].len - 1;
+    int p = last;
+    while (p != -1 && !st[p].next.count(c)) {
+        st[p].next[c] = cur;
+        p = st[p].link;
+    }
+    if (p == -1) {
+        st[cur].link = 0;
+    } else {
+        int q = st[p].next[c];
+        if (st[p].len + 1 == st[q].len) {
+            st[cur].link = q;
+        } else {
+            
+            int clone = sz++;
+            st[clone].len = st[p].len + 1;
+            st[clone].next = st[q].next;
+            st[clone].link = st[q].link;
+            st[clone].is_clone = true;
+            st[clone].firstpos = st[q].firstpos;
+            
+            while (p != -1 && st[p].next[c] == q) {
+                st[p].next[c] = clone;
+                p = st[p].link;
+            }
+            st[q].link = st[cur].link = clone;
+        }
+    }
+    last = cur;
+}
+ 
+void create(string & s)
+{
+   sa_init();
+   for(auto x : s) sa_extend(x);
+    
+   for(int v=1;v<sz;v++)
+       st[st[v].link].inv_link.pb(v);
+}
+ 
+vi go[5004];
+ 
+void dfs(int node,int len)
+{
+    if(st[node].is_clone == 0)
+    {
+        go[st[node].firstpos + 1].pb(len);  
+    }
+    
+    for(auto x : st[node].inv_link) dfs(x,len);
+}
+ 
+void find(string & s)
+{
+    int len = s.length();
+    
+    int cur = 0;
+    int id = 0;
+    
+    for(int id=0;id<len;id++)
+    {
+        if(st[cur].next.find(s[id]) == st[cur].next.end()) return;
+        cur = st[cur].next[s[id]];
+    }
+    
+    dfs(cur,len);
+}
+ 
+const int MOD = 1e9+7;
+ 
+ 
+int dp[N];
+ 
+void solve()
+{
+    string s;
+    cin >> s;
+    
+    int n = s.length();
+    
+    create(s);
+    
+    int k;
+    cin >> k;
+    
+    f(i,k)
+    {
+        cin >> s;
+        find(s);
+    }
+        
+    dp[0] = 1;
+    
+    for(int i=1;i<=n;i++)
+        for(auto z : go[i]) dp[i] = (dp[i] + dp[i-z])%MOD;
+        
+    cout << dp[n];
+}
+ 
+signed main()
+{
+    fast;
+    
+    int t = 1;
+    
+//    cin >> t;
+    
+    while(t--)
+        
+    solve();
+}
