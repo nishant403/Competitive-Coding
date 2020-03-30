@@ -1,0 +1,122 @@
+#include <bits/stdc++.h>
+using namespace std;
+   
+#define int long long 
+#define pb push_back
+#define S second
+#define F first
+#define f(i,n) for(int i=1;i<=n;i++)
+#define fast ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0)
+#define vi vector<int>
+#define pii pair<int,int>
+
+const int BT = 60;
+const int N = 1e5+10;
+
+int root[N],availNode = 0;
+
+struct node 
+{ 
+    int ara[2], sum;
+    node() {}
+    
+} tree[(BT+2)*N];    
+
+void insert(int prevnode, int &curRoot, int val) 
+{
+        curRoot = ++availNode;
+        int curnode = curRoot;
+    
+        for(int i = BT-1; i >= 0; i--) 
+        {
+            bool bit = val & (1LL << i);
+            tree[curnode] = tree[prevnode];
+            tree[curnode].ara[bit] = ++availNode;
+            tree[curnode].sum += 1;
+            prevnode = tree[prevnode].ara[bit];
+            curnode = tree[curnode].ara[bit];
+        }
+    
+        tree[curnode] = tree[prevnode];
+        tree[curnode].sum += 1;
+}
+    
+int query(int prevnode, int curnode, int x) {
+    
+    int ans = 0;
+    
+    for(int i = BT-1; i >= 0; i--) 
+    {
+        bool bit = x & (1LL << i);
+        
+        if(tree[tree[curnode].ara[bit ^ 1]].sum > tree[tree[prevnode].ara[bit ^ 1]].sum) 
+        {
+            curnode = tree[curnode].ara[bit ^ 1]; 
+            prevnode = tree[prevnode].ara[bit ^ 1]; 
+            ans = ans | (1LL << i);
+        }
+        else 
+        {
+            curnode = tree[curnode].ara[bit]; 
+            prevnode = tree[prevnode].ara[bit]; 
+        }
+    }
+ return ans;
+}
+
+vi g[N];
+int val[N];
+int st[N];
+int ft[N];
+int timer = 1;
+
+void dfs1(int node,int par = -1)
+{   
+   insert(root[timer-1],root[timer],val[node]);
+  
+   st[node] = ft[node] = timer++; 
+       
+    for(auto x : g[node])
+    {
+        if(x == par) continue;
+        dfs1(x,node);
+        ft[node] = ft[x];
+    }
+}
+
+
+void solve()
+{
+   int n;
+   cin >> n;
+    
+   int u,v;
+    
+   insert(root[0],root[0],0); 
+    
+   f(i,n-1)
+   {
+       cin >> u >> v;
+       g[u].pb(v);
+       g[v].pb(u);
+   }
+    
+   f(i,n) cin >> val[i]; 
+    
+   dfs1(1,-1); 
+    
+   int q;
+   cin >> q;
+ 
+   f(i,q) 
+   {
+       cin >> u >> v;
+       cout << query(root[st[u]-1],root[ft[u]],v) << '\n';
+   }
+}
+
+signed main()
+{
+    fast;
+    solve();
+}
