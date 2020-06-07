@@ -81,7 +81,7 @@ matrix power(matrix a, int b)
 {
 	matrix res;
 	res.makeiden();
-	while(b)
+	while(b > 0)
 	{
 		if(b & 1)
 		{
