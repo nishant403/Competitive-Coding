@@ -1,140 +1,123 @@
-//g++  5.4.0
- 
-#include <bits/stdc++.h>
+#include <stdio.h>
+#include <vector>
+#include <set>
+#include <algorithm>
 using namespace std;
-const int N = 2e5+5;
-const int LN = 20; 
-#define ll long long 
-#define pb push_back
-#define ff first
-#define ss second
-#define pii pair<ll,ll>
-#define INF LONG_LONG_MAX
-#define minQueue priority_queue < pii , vector<pii> , greater<pii> >
+#define LIM 111111
 
-vector< pii > g[N];
-vector<bool > vis(N,0);
-vector<ll> dist(N , INF);
-vector<ll> ord(N);
-ll par[LN][N];
-vector<ll> dep(N,0);
-vector<ll> sz(N,1);
-ll total = 0;
+vector< vector<int> > succ(LIM);
+vector< vector<int> > pred(LIM);
+int n, v, m;
+int semi[LIM];
+int vertex[LIM];
+int parent[LIM];
+int dom[LIM];
+vector< set<int> > bucket(LIM);
 
-ll lca(ll u , ll v )
-{
-    if(dep[u] > dep[v] ) swap(u,v);
-    ll diff = dep[v] - dep[u];
-    
-    for(int i = LN-1 ; i >= 0 ; i-- )
-    {
-        if( diff & (1<<i) )
-            v = par[i][v]  ;
-    }
-    
-    if(u == v) return u;
-    
-    for(int i = LN-1 ; i >= 0 ; i-- )
-    {
-        if( par[i][v] != par[i][u] )
-            v = par[i][v] , u = par[i][u];
-    }
-    return par[0][v];
-    
-}
-void dijistra(ll s)
-{
-    dist[s] = 0;
-    minQueue Q;
-    Q.push({0,s});
-    
-    while(!Q.empty())
-    {
-        pii p = Q.top();
-        ll v  = p.ss;
-        ll d  = p.ff;
-        Q.pop();
-        if(vis[v]) continue;
-        
-        ord[total++] = v;
-        
-        vis[v] = 1;
-        for(auto it : g[v] )
-        {
-            if(!vis[it.ff])
-            {
-                if(dist[it.ff] > dist[v] + it.ss)
-                {
-                    dist[it.ff] = dist[v] + it.ss;
-                    Q.push({dist[it.ff] , it.ff});
-                }
-       
-            }
+// TODO make iterative?
+void dfs(int v) {
+    semi[v] = ++n;
+    vertex[n] = v;
+    for (int nb = 0; nb < succ[v].size(); nb++) {
+        int w = succ[v][nb];
+        if (semi[w] == 0) {
+            parent[w] = v;
+            dfs(w);
         }
+        pred[w].push_back(v);
     }
 }
 
-int main()
-{
-    ios_base::sync_with_stdio(0);
-    cin.tie(0);
-    cout.tie(0);
-    ll  n , m , s;
-    cin >> n >> m >> s;
-    for(int i = 0 ; i <  m ; i++ )
-    {
-        ll u ,  v, w;
-        cin >> u >> v >> w;
-        g[u].pb({v,w});
-        g[v].pb({u,w});
-    }
-    
-    dijistra(s);
-    
-    //create a dominatory tree
-    for(int i = 0 ; i < LN ; i++)
-        for(int j = 1 ; j <= n ; j++ )
-            par[i][j] = -1;
+int ancestor[LIM];
+int label[LIM];
 
-        
-    for(int i = 0 ; i < total ; i++ )
-    {
-        ll v = ord[i];
-        ll dn = -1;
-        
-        for(auto it : g[v])
-        {
-            if(dist[it.ff] + it.ss == dist[v] )
-            {
-                if(dn == -1) dn = it.ff;           // only one shortest path from s to v via dn till now
-                else dn = lca(dn,it.ff); // if multiple shortest path exist then dominatory node for v is lca of dn and it.ff 
-            }
-            
+void INIT() {
+    for (int i = 0; i < v; i++) {
+        ancestor[i] = -1;
+        label[i] = i;
+    }
+}
+
+void COMPRESS(int v) {
+    if (ancestor[ancestor[v]] >= 0) {
+        COMPRESS(ancestor[v]);
+        if (semi[label[ancestor[v]]] < semi[label[v]]) {
+            label[v] = label[ancestor[v]];
         }
-        
-        if(dn == -1)    continue;
-        dep[v] = dep[dn] + 1;
-        par[0][v] = dn ;
-        
-    for(int i = 1 ; i < LN ; i++ )
-        {    
-                if( par[i-1][v] != -1 )
-                    par[i][v] = par[i-1][ par[i-1][v] ] ;
-        }    
+        ancestor[v] = ancestor[ancestor[v]];
     }
+}
+
+int EVAL(int v) {
+    if (ancestor[v] < 0) {
+        return v;
+    } else {
+        COMPRESS(v);
+        return label[v];
+    }
+}
+
+void LINK(int v, int w) {
+    ancestor[w] = v;
+}
+
+int fdom[LIM];
+int fdct[LIM];
+
+int main() {
+    scanf("%d%d", &v, &m);
+    for (int mm = 0; mm < m; mm++) {
+        int a, b;
+        scanf("%d%d", &a, &b);
+        a--, b--;
+        succ[a].push_back(b);
+    }
+
+    // step 1
+    for (int i = 0; i < v; i++) {
+        semi[i] = 0;
+    }
+    dfs(0);
+
+    INIT();
+
+    for (int i = n; i >= 2; i--) {
+        // step 2
+        int w = vertex[i];
+        for (int nb = 0; nb < pred[w].size(); nb++) {
+            int v = pred[w][nb];
+            int u = EVAL(v);
+            if (semi[u] < semi[w]) semi[w] = semi[u];
+        }
+        bucket[vertex[semi[w]]].insert(w);
+        LINK(parent[w], w);
+        // step 3
+        for (set<int>::iterator it = bucket[parent[w]].begin(); it != bucket[parent[w]].end(); it++) {
+            int v = *it;
+            int u = EVAL(v);
+            dom[v] = semi[u] < semi[v] ? u : parent[w];
+        }
+        bucket[parent[w]].clear();
+    }
+
+    // step 4
+    for (int i = 2; i <= n; i++) {
+        int w = vertex[i];
+        if (dom[w] != vertex[semi[w]]) dom[w] = dom[dom[w]];
+    }
+    dom[0] = 0;
+
+    vector<int> res;
+    int vv = v-1;
     
-    ll ans = 0;
-    
-    for(int i = total-1; i >= 0 ; i--)
+    while(1)
     {
-        ll v = ord[i];
-       
-        if(v==s) continue;
-        
-         sz[par[0][v]] += sz[v];
-        
-        ans = max(ans,sz[v]);
+        res.push_back(vv);
+        if(vv == 0) break;
+        vv = dom[vv];
     }
     
-    cout << ans;
+    sort(res.begin(),res.end());
+    printf("%d\n",res.size());
+    for(auto x : res) printf("%d ",x + 1);
 }
