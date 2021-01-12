@@ -1,0 +1,67 @@
+const int N = 2e5 + 10;
+ 
+int seg[4*N];
+int lazy[4*N];
+int a[N];
+ 
+void build(int node,int ss,int se)
+{
+    if(ss == se)
+    {
+        seg[node] = a[ss];
+        return;
+    }
+    
+    int mid = (ss + se)/2;
+    
+    build(node*2+1,ss,mid);
+    build(node*2+2,mid+1,se);
+    seg[node] = seg[node*2+1] + seg[node*2+2];
+}
+ 
+void push(int node,int ss,int se)
+{
+    seg[node]+=lazy[node];
+    
+    if(ss != se)
+    {
+        lazy[node*2+1]+=lazy[node];
+        lazy[node*2+2]+=lazy[node];
+    }
+    
+    lazy[node] = 0; 
+}
+ 
+void update(int node,int ss,int se,int l,int r,int u)
+{
+    if(se < l || r < ss) return;
+ 
+    push(node,ss,se);
+       
+    if(l <= ss && se <= r)
+    {
+        lazy[node]+=u;
+        push(node,ss,se);
+        return;
+    }
+    
+    int mid = (ss + se)/2;
+    update(node*2+1,ss,mid,l,r,u);
+    update(node*2+2,mid+1,se,l,r,u);
+}
+ 
+int query(int node,int ss,int se,int id)
+{
+    if(se < id || id < ss) return 0;
+ 
+    push(node,ss,se);
+    
+    if(ss == se)
+    {
+        return seg[node];
+    }
+    
+    int mid = (ss + se)/2;
+    
+    return query(node*2+1,ss,mid,id) + query(node*2+2,mid+1,se,id);
+}
