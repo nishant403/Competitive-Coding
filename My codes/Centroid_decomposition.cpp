@@ -11,7 +11,8 @@ using namespace std;
 #define pii pair<int,int>
 
 const int N = 2e5 + 10;
-unordered_set<int> g[N];
+vector<int> g[N];
+bool vis[N];
 int n,k1,k2;
 int res = 0;
 
@@ -30,14 +31,14 @@ void dfs1(int node,int par)
    nn++;
     
    for(auto x : g[node])
-       if(x != par) dfs1(x,node),sz[node]+=sz[x];
+       if(!vis[x] && x != par) dfs1(x,node),sz[node]+=sz[x];
 }
 
 //Find centroid from the sizes
 int dfs2(int node,int par)
 {
     for(auto x : g[node])
-        if(x != par && sz[x] > (nn/2)) return dfs2(x,node);
+        if(!vis[x] && x != par && sz[x] > (nn/2)) return dfs2(x,node);
         
 	return node;
 }
@@ -49,7 +50,7 @@ void dfs3(int node,int par,int dist,int ad)
     dep[dist]+=ad; 
     
     for(auto x : g[node])
-        if(x != par) dfs3(x,node,dist+1,ad);
+        if(!vis[x] && x != par) dfs3(x,node,dist+1,ad);
 }
 
 //Add/Remove the answers to the nodes
@@ -59,7 +60,7 @@ void dfs4(int node,int par,int dist)
     if(k1 - dist >= 0) res -= dep[min(nn,k1 - dist)];
     
     for(auto x : g[node])
-        if(x != par) dfs4(x,node,dist+1);
+        if(!vis[x] && x != par) dfs4(x,node,dist+1);
 }
 
 //Main centroid decomposition function
@@ -80,6 +81,8 @@ void decompose(int root)
     //now remove the repeated things for subtrees
     for(auto x : g[centroid])
     {
+        if(vis[x]) continue;
+        
         nn = 1;
         dfs3(x,centroid,1,-1);
         for(int i=1;i<=nn;i++) dep[i]+=dep[i-1];
@@ -87,12 +90,11 @@ void decompose(int root)
         for(int i=0;i<=nn;i++) dep[i] = 0;
     }
     
+    vis[centroid] = 1;
+    
     //remove centroid from the tree and recurse
     for(auto x : g[centroid])
-    {
-        g[x].erase(centroid);
-        decompose(x);
-    }
+        if(!vis[x]) decompose(x);
 }
 
 signed main()
@@ -107,8 +109,8 @@ signed main()
     f(i,n-1)
     {
         cin >> u >> v;
-        g[u].insert(v);
-        g[v].insert(u);
+        g[u].pb(v);
+        g[v].pb(u);
     }
     
     decompose(1);
