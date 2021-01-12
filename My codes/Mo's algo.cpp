@@ -1,17 +1,3 @@
-//Mo's algorithm
-//SPOJ : D-Query
-
-#include <bits/stdc++.h>
-using namespace std;
- 
-#define pb push_back
-#define S second
-#define F first
-#define f(i,n) for(int i=0;i<n;i++)
-#define fast ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0)
-#define vi vector<int>
-#define pii pair<int,int>
-
 const int N = 30004;
 const int M = 1e6;
 
@@ -76,29 +62,4 @@ vector<int> mo(vector<Query> & queries) {
         answers[q.idx] = get_answer();
     }
     return answers;
-}
-
-void solve()
-{
-  cin >> n ;
-    
-  f(i,n) cin >> a[i+1];
-    
-  cin >> m;  
-    
-  vector<Query> qq(m);
-    
-  f(i,m) cin >> qq[i].l >> qq[i].r;
-    
-  f(i,m) qq[i].idx = i; 
-    
-  auto v =  mo(qq);
-    
- for(auto x : v) cout << x <<"\n";
-}
-
-signed main()
-{
-    fast;
-    solve();
 }
