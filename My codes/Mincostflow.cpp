@@ -74,7 +74,7 @@ struct mcmf {
             }
             if(!vis[t]) break;
             
-            for(int i=1;i<=n;i++) 
+            for(int i=1;i<n;i++) 
                 dist[i] += pot[i] - pot[s];
            
             cost += dist[t] * f[t];
