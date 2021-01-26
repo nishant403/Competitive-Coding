@@ -1,0 +1,81 @@
+#include <bits/stdc++.h>
+using namespace std;
+  
+#define int long long 
+#define pb push_back
+#define S second
+#define F first
+#define f(i,n) for(int i=1;i<=n;i++)
+#define fast ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0)
+#define vi vector<int>
+#define pii pair<int,int>
+ 
+const int N = 3005;
+const int INF = 1e18;
+const int inf = 1e18;
+ 
+int n,k;
+int a[N];
+int pref[N];
+ 
+int C(int i,int j)
+{
+    int res = 0;
+    int mid = (i + j + 1)/2;
+    int tot = a[j-1] - a[mid- 1];
+  
+    res -= (tot*j) - (pref[j-1] - pref[mid-1]);
+    res += (pref[j-1] - pref[mid-1]) - (tot*i);
+    res += (a[n] - a[j-1])*(j - i);
+ 
+    return -res;
+}
+ 
+vector<int> dp_before(N,inf), dp_cur(N,inf);
+ 
+// compute dp_cur[l], ... dp_cur[r] (inclusive)
+void compute(int l, int r, int optl, int optr)
+{
+    if (l > r) return;
+    int mid = (l + r) >> 1;
+    pair<long long, int> best = {INF, -1};
+ 
+    for (int k = optl; k <= min(mid, optr); k++) {
+        best = min(best, {dp_before[k] + C(k,mid), k});
+    }
+ 
+    dp_cur[mid] = best.first;
+    int opt = best.second;
+ 
+    compute(l, mid - 1, optl, opt);
+    compute(mid + 1, r, opt, optr);
+}
+ 
+signed main()
+{
+    fast;
+    
+    cin >> n >> k;
+    
+    f(i,n) cin >> a[i]; 
+    f(i,n) pref[i] = pref[i-1] + (a[i]*i);
+    f(i,n) a[i]+=a[i-1];
+    
+    for(int i=1;i<=n;i++)
+        dp_before[i] = pref[n] - a[n]*i + (2*a[i]*i) - 2*pref[i];
+    
+    for(int i=2;i<=k;i++)
+    {
+        compute(1,n,1,n);
+       
+        f(j,n)
+        {
+            dp_before[j] = dp_cur[j];
+            dp_cur[j] = inf;
+        }
+    }
+    
+    int res = inf;
+    f(i,n) res = min(res,dp_before[i]);
+    cout << res;
+}
