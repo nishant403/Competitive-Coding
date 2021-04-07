@@ -65,11 +65,10 @@ vector<int> sort_cyclic_shifts(string const& s)
     return p;
 }
  
-string ss;
- 
-void create(string & s)
+void create(string s)
 {
-    ss = s;
+    sa.clear();
+    
     s += '$';   
     sa = sort_cyclic_shifts(s);
     sa.erase(sa.begin());
@@ -147,7 +146,7 @@ signed main()
     
     create(s);
     
-    vector<int> lcp = lcp_construction(ss,sa);
+    vector<int> lcp = lcp_construction(s,sa);
     
     for(int i=2;i<=n;i++) lg[i] = (lg[i-1] + !(i & (i-1)));
  
@@ -202,5 +201,5 @@ signed main()
     }
     
     for(int i=0;i<res2;i++)
-        cout << ss[sa[res]+i];
+        cout << s[sa[res]+i];
 }
