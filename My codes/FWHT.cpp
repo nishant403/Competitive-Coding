@@ -6,7 +6,7 @@ const int N = 256;
 //Fast Walsh Hadamard Transform
 
 //XOR [  1 1 ]   //AND [ 0 1 ]  //OR  [ 1 1 ]
-//    [ -1 1 ]         [ 1 1 ]        [ 1 0 ]
+//    [ 1 -1 ]         [ 1 1 ]        [ 1 0 ]
 
 vector<int> FWHT(vector<int> P,bool inv)
 {
