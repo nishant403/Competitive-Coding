@@ -46,99 +46,16 @@ vector<int> g[N];
 char val[N];
 
 vector<pair<int,int> > queries[N];
-vector<int> candidates[N];
+int candidates[N];
 int res[N];
 
 int nn;
 bool vis[N];
 int sz[N]; 
 int dep[N];
+int dep2[N];
 set<pair<int,int> > sorted_indices[N]; 
 int rnk[N];
-
-void lca_build(int n)
-{
-  for(int i=1;i<LN;i++)
-      for(int j=1;j<=n;j++)
-        if(p[j][i-1] != -1)  
-           p[j][i] = p[p[j][i-1]][i-1];  
-}
-
-int lca(int a,int b)
-{
- if(dep[a] > dep[b]) swap(a,b);  
- 
- int z = dep[b] - dep[a];
-   
- for(int i=LN-1;i>=0;i--) if(1LL<<i & z) b = p[b][i];   
-     
- if(a==b) return a;    
-     
- for(int i=LN-1;i>=0;i--) if(p[a][i] != p[b][i]) a=p[a][i],b=p[b][i];  
- 
- return p[a][0];  
-}
-
-//Find sizes of nodes
-void dfs1(int node,int par)
-{
-   nn++;
-   sz[node] = 1;
-    
-   for(auto x : g[node])
-       if(!vis[x] && x != par) dfs1(x,node),sz[node]+=sz[x];
-}
-
-//Find centroid from the sizes
-int dfs2(int node,int par)
-{
-    for(auto x : g[node])
-        if(!vis[x] && x != par && sz[x] > (nn/2)) return dfs2(x,node);
-        
-	return node;
-}
-    
-//Find depths when centroid is root
-void dfs3(int node,int par)
-{
-    if(par == -1) dep[node] = 0;
-    else dep[node] = dep[par] + 1;
-    
-    for(auto x : g[node])
-        if(!vis[x] && x != par) dfs3(x,node);
-}
-
-//Add/remove the nodes from DS
-void dfs4(int node,int par,bool rem)
-{
-    if(rem) sorted_indices[dep[node]].erase({rnk[node],node});
-    else sorted_indices[dep[node]].insert({rnk[node],node});
-    
-    for(auto x : g[node])
-        if(!vis[x] && x != par) dfs4(x,node,rem);
-}
-
-void get_answer(int node)
-{
-    for(auto x : queries[node])
-    {
-        int req_depth = x.F - dep[node] - 1;
-        
-        if(req_depth >= 0 && !sorted_indices[req_depth].empty())
-        {
-            candidates[x.S].push_back((*sorted_indices[req_depth].begin()).S);
-        }
-    }
-}
-
-//Answer the queries of node
-void dfs5(int node,int par)
-{
-    get_answer(node); 
-      
-    for(auto x : g[node])
-        if(!vis[x] && x != par) dfs5(x,node);
-}
 
 //Prepare for path hashing
 void dfs6(int node,int par)
@@ -165,6 +82,29 @@ void dfs6(int node,int par)
         if(x != par) dfs6(x,node);
 }
 
+void lca_build(int n)
+{
+  for(int i=1;i<LN;i++)
+      for(int j=1;j<=n;j++)
+        if(p[j][i-1] != -1)  
+           p[j][i] = p[p[j][i-1]][i-1];  
+}
+
+int lca(int a,int b)
+{
+ if(dep[a] > dep[b]) swap(a,b);  
+ 
+ int z = dep[b] - dep[a];
+   
+ for(int i=LN-1;i>=0;i--) if(1LL<<i & z) b = p[b][i];   
+     
+ if(a==b) return a;    
+     
+ for(int i=LN-1;i>=0;i--) if(p[a][i] != p[b][i]) a=p[a][i],b=p[b][i];  
+ 
+ return p[a][0];  
+}
+
 //kth ancestor of u
 int kdis(int u,int k)
 {
@@ -174,7 +114,7 @@ int kdis(int u,int k)
     return u;
 }
 
-//kth node in the path from u to v, k is 0-indexed
+//kth node in the path from u to v
 int get_kth(int u,int v,int k)
 {
     if(u == v) return u;
@@ -265,6 +205,71 @@ int get_best(int u,int v1,int v2)
     }
 }
 
+
+//Find sizes of nodes
+void dfs1(int node,int par)
+{
+   nn++;
+   sz[node] = 1;
+    
+   for(auto x : g[node])
+       if(!vis[x] && x != par) dfs1(x,node),sz[node]+=sz[x];
+}
+
+//Find centroid from the sizes
+int dfs2(int node,int par)
+{
+    for(auto x : g[node])
+        if(!vis[x] && x != par && sz[x] > (nn/2)) return dfs2(x,node);
+        
+	return node;
+}
+    
+//Find depths when centroid is root
+void dfs3(int node,int par)
+{
+    if(par == -1) dep2[node] = 0;
+    else dep2[node] = dep2[par] + 1;
+    
+    for(auto x : g[node])
+        if(!vis[x] && x != par) dfs3(x,node);
+}
+
+//Add/remove the nodes from DS
+void dfs4(int node,int par,bool rem)
+{
+    if(rem) sorted_indices[dep2[node]].erase({rnk[node],node});
+    else sorted_indices[dep2[node]].insert({rnk[node],node});
+    
+    for(auto x : g[node])
+        if(!vis[x] && x != par) dfs4(x,node,rem);
+}
+
+void get_answer(int node)
+{
+    for(auto x : queries[node])
+    {
+        int req_depth = x.F - dep2[node] - 1;
+        
+        if(req_depth >= 0 && !sorted_indices[req_depth].empty())
+        {
+            int new_val = (*sorted_indices[req_depth].begin()).S;
+            
+            if(candidates[x.S] == -1) candidates[x.S] = new_val;
+            else candidates[x.S] = get_best(node,candidates[x.S],new_val);
+        }
+    }
+}
+
+//Answer the queries of node
+void dfs5(int node,int par)
+{
+    get_answer(node); 
+      
+    for(auto x : g[node])
+        if(!vis[x] && x != par) dfs5(x,node);
+}
+
 //Main centroid decomposition function
 void decompose(int root)
 {   
@@ -285,7 +290,7 @@ void decompose(int root)
         
         for(auto x : sorted_indices[depth])
           for(auto y : g[x.S]) 
-            if(dep[y] == dep[x.S] + 1)
+            if(dep2[y] == dep2[x.S] + 1)
               go.push_back({{x.F,val[y]},y});
         
         sort(all(go));
@@ -332,11 +337,8 @@ void solve()
     int n,q;
     cin >> n >> q;
     
-    for(int i=1;i<=n;i++) 
-        for(int j=0;j<LN;j++) p[i][j] = -1;
-    
     for(int i=1;i<=n;i++) cin >> val[i];
-    
+      
     int u,v;
     
     for(int i=1;i<=n-1;i++)
@@ -350,34 +352,28 @@ void solve()
     {   
         cin >> u >> v;
         queries[u].push_back({v,i});
+        candidates[i] = -1;
     }
+    
+    for(int i=1;i<=n;i++) 
+        for(int j=0;j<LN;j++) p[i][j] = -1;
+        
+    dfs6(1,-1);
+    
+    lca_build(n);
     
     decompose(1);
     
-    dfs6(1,-1);
-    lca_build(n);
-    
     for(int i=1;i<=n;i++)
         for(auto x : queries[i])
-    {
-        int cur_best = -1;
-        
-        for(auto z : candidates[x.S])
-        {
-            if(cur_best == -1) cur_best = z;
-            else cur_best = get_best(i,cur_best,z);
-        }
-        
-        if(cur_best != -1) res[x.S] = get_hash(i,cur_best);
-        else res[x.S] = -1;
-    }
+         if(candidates[x.S] == -1) res[x.S] = -1;
+         else res[x.S] = get_hash(i,candidates[x.S]);
     
     for(int i=1;i<=q;i++)
         cout << res[i] << '\n';
     
     for(int i=1;i<=n;i++) g[i].clear();
     for(int i=1;i<=n;i++) queries[i].clear();
-    for(int i=1;i<=q;i++) candidates[i].clear();
     for(int i=1;i<=n;i++) vis[i] = 0;
 }
 
