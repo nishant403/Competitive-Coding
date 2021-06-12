@@ -165,6 +165,7 @@ void dfs6(int node,int par)
         if(x != par) dfs6(x,node);
 }
 
+//kth ancestor of u
 int kdis(int u,int k)
 {
     for(int i=LN-1;i>=0;i--)
@@ -173,6 +174,7 @@ int kdis(int u,int k)
     return u;
 }
 
+//kth node in the path from u to v, k is 0-indexed
 int get_kth(int u,int v,int k)
 {
     if(u == v) return u;
@@ -227,6 +229,7 @@ int get_hash(int u,int v)
     return answer;
 }
 
+//compare path of u to v1 and u to v2, return the smallest of them
 int get_best(int u,int v1,int v2)
 {
     int lc1 = lca(u,v1);
@@ -370,10 +373,7 @@ void solve()
     }
     
     for(int i=1;i<=q;i++)
-    {
-        cout << res[i] << ' ';
-        cout << '\n';
-    }
+        cout << res[i] << '\n';
     
     for(int i=1;i<=n;i++) g[i].clear();
     for(int i=1;i<=n;i++) queries[i].clear();
