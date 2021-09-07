@@ -1,9 +1,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-//Problem : https://codeforces.com/edu/course/2/lesson/4/2/practice/contest/273278/problem/B
-
-//reference code : https://www.codechef.com/viewsolution/25336654
+//reference : https://www.codechef.com/viewsolution/25336654
 
 int segtree_size(int n) {
     // 2^(ceil(lg(n)) + 1) - 1
@@ -178,16 +176,18 @@ public:
         update(0, 0, n-1, i, j, f);
     }
     
-private:
+    private:
     int find_first_knowingly(int root, int first, int last,const function<bool(const M &)> & f) {
+        propagate(root, first, last);
+       
         if(first == last) {
             return first;
         }
        
-        propagate(root, first, last);
-       
         int left = 2 * root + 1;
         int mid = (first + last)/2;
+        
+        propagate(left,first,mid);
         
         if(f(values[left])) {
           return find_first_knowingly(left,first,mid,f);
@@ -227,7 +227,6 @@ public:
     int find_first(int i,int j,const function<bool(const M&)> & f) {
         return find_first(0,0,n-1,i,j,f);
     }
-    
 };
 
 using namespace std;
@@ -245,28 +244,33 @@ const int inf = 1e18;
 
 class CoinCount {
 private:
-    int sum,sz;
+    int ones,sz;
 
 public:
     // mandatory methods
-    CoinCount(): sum(0),sz(1) {}
+    CoinCount(): ones(0),sz(1) {}
 
-    CoinCount(const CoinCount& l, const CoinCount& r) : sum(l.sum + r.sum),sz(l.sz+r.sz) {}
+    CoinCount(const CoinCount& l, const CoinCount& r)
+    {
+        ones = l.ones + r.ones;
+        sz = l.sz + r.sz;
+    }
 
     // custom methods
-    CoinCount(int _sum,int _sz): sum(_sum),sz(_sz) {}
+    CoinCount(int _ones,int _sz): ones(_ones),sz(_sz) {}
 
     CoinCount flip() const {
-        return CoinCount(sz-sum,sz);
+        return CoinCount(sz - ones,sz);
     }
 
     void print() const {
-        cout <<"CC(sum = " << sum << ")\n";
+        cout <<"CC(sum = " << ones << ")\n";
     }
 
     int get_answer() const {
-        return sum;
+        return ones;
     }
+    
 };
 
 /*
@@ -295,12 +299,11 @@ public:
         flip(a.flip != b.flip) {}
 
     CoinCount operator()(const CoinCount& x) {
-        if(flip) return x.flip();
-        else return x;
+        return x.flip();
     }
 
     void print() const {
-        cout << static_cast<int>(flip) << '\n';
+        
     }
 
     // custom methods
@@ -316,32 +319,33 @@ signed main()
     int n, q;
     cin >> n >> q;
     
-    vector<CoinCount> arr(n);
+    CoinCount init(0,1);
+    SegTree<CoinCount, FlipOp> segTree(n,init);
     
-    for(int i=0;i<n;i++) 
-    {
-        int x;
-        cin >> x;
-        if(x == 1) arr[i] = arr[i].flip();
-    }
-    
-    SegTree<CoinCount, FlipOp> segTree(arr);
     FlipOp upd(true);
     
     while(q--)
     {
-        int x,y;
-        cin >> x >> y;
+        int t;
+        cin >> t;
         
-        if(x == 1)
+        if(t == 1)
         {
-            segTree.update(y,y,upd);
+            int l,r;
+            cin >> l >> r;
+            r--;
+            segTree.update(l,r,upd);
         }
         else
         {
-            auto fc = [&y](const CoinCount & cc) {
-                if(cc.get_answer() > y) return true;
-                y -= cc.get_answer();
+            int k;
+            cin >> k;
+            k++;
+            
+            auto fc = [&k](const CoinCount & cc) {
+                
+                if(cc.get_answer() >= k) return true;
+                k -= cc.get_answer();
                 return false;
             };
             
