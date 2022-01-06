@@ -5,6 +5,8 @@ using namespace std;
 /*
   ######################################################################
   #######################   THE   BIG   INT   ##########################
+  
+  Note : When using multiplication , *= with integer is faster , instead of creating separate Int instance
 */
 
 const int base = 1000000000;
